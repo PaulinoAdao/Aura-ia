@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Híbrida - Offline & Online</title>
+    <!-- Fonte Google Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Ícones FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --user-msg: #3b82f6;
+            --bot-msg: #334155;
+            --offline-badge: #10b981;
+            --online-badge: #06b6d4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Cabeçalho */
+        .chat-header {
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-color), var(--online-badge));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .bot-info h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .bot-info p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* Área de Mensagens */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in-out;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--user-msg);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: var(--bot-msg);
+            color: var(--text-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Tags indicando se veio de Offline ou Online */
+        .source-tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .tag-offline {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: var(--offline-badge);
+            border: 1px solid var(--offline-badge);
+        }
+
+        .tag-online {
+            background-color: rgba(6, 182, 212, 0.2);
+            color: var(--online-badge);
+            border: 1px solid var(--online-badge);
+        }
+
+        /* Caixa de Entrada */
+        .chat-input-area {
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 18px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #0f172a;
+            color: #fff;
+            outline: none;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input-area input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .chat-input-area button {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            background-color: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        /* Indicador de carregamento */
+        .typing {
+            display: flex;
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing span:nth-child(1) { animation-delay: -0.32s; }
+        .typing span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <!-- Cabeçalho -->
+        <div class="chat-header">
+            <div class="avatar">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="bot-info">
+                <h2>Aura IA</h2>
+                <p>Híbrida: Respostas Offline & Online</p>
+            </div>
+        </div>
+
+        <!-- Mensagens -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <span class="source-tag tag-offline">Offline</span><br>
+                Olá! Sou a **Aura**. Posso responder a cumprimentos e perguntas básicas em modo offline. Se me fizeres uma pergunta avançada, buscarei a resposta na web!
+            </div>
+        </div>
+
+        <!-- Entrada de Texto -->
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="Escreve a tua pergunta..." onkeydown="handleKeyPress(event)">
+            <button onclick="sendMessage()">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. BASE DE DADOS LOCAL (OFFLINE) ---
+        const knowledgeBaseOffline = [
+            { keywords: ["ola", "olá", "oi", "bom dia", "boa tarde", "boa noite"], response: "Olá! Como posso ajudar-te hoje?" },
+            { keywords: ["quem es tu", "quem é você", "teu nome", "seu nome"], response: "Eu sou a Aura, uma IA assistente criada em HTML, CSS e JavaScript!" },
+            { keywords: ["como estas", "tudo bem", "como vai"], response: "Estou a funcionar perfeitamente! E contigo, como estão as coisas?" },
+            { keywords: ["obrigado", "obrigada", "valeu"], response: "De nada! Fico feliz em ajudar." },
+            { keywords: ["tchau", "adeuz", "até logo"], response: "Até breve! Se precisares de algo, é só chamar." },
+            { keywords: ["que horas sao", "horas"], response: `Neste momento são aproximadamente ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.` },
+            { keywords: ["ajuda", "o que sabes fazer"], response: "Respondo a conversas básicas diretamente do meu sistema local e pesquiso na web por temas complexos ou avançados!" }
+        ];
+
+        const chatMessages = document.getElementById("chatMessages");
+        const userInput = document.getElementById("userInput");
+
+        function handleKeyPress(e) {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // Exibir mensagem do utilizador
+            appendMessage(text, "user");
+            userInput.value = "";
+
+            // Exibir indicador de "a digitar..."
+            const typingElem = showTypingIndicator();
+
+            // Processar a resposta (Primeiro tenta Offline, depois Online)
+            const responseData = await getAIResponse(text);
+
+            // Remover o "a digitar..." e mostrar resposta
+            typingElem.remove();
+            appendMessage(responseData.text, "bot", responseData.source);
+        }
+
+        function appendMessage(text, sender, source = null) {
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message", sender);
+
+            if (sender === "bot" && source) {
+                const tag = document.createElement("span");
+                tag.classList.add("source-tag", source === "offline" ? "tag-offline" : "tag-online");
+                tag.innerText = source === "offline" ? "Offline" : "Online";
+                msgDiv.appendChild(tag);
+                msgDiv.appendChild(document.createElement("br"));
+            }
+
+            const textNode = document.createElement("span");
+            textNode.innerHTML = text.replace(/\n/g, "<br>");
+            msgDiv.appendChild(textNode);
+
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement("div");
+            typingDiv.classList.add("message", "bot");
+            typingDiv.innerHTML = `
+                <div class="typing">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return typingDiv;
+        }
+
+        // --- 2. LÓGICA DE DECISÃO (HÍBRIDA) ---
+        async function getAIResponse(query) {
+            const cleanQuery = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // A) VERIFICAÇÃO OFFLINE
+            for (let item of knowledgeBaseOffline) {
+                for (let keyword of item.keywords) {
+                    if (cleanQuery.includes(keyword)) {
+                        // Pequeno atraso para simular processamento
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        return { text: item.response, source: "offline" };
+                    }
+                }
+            }
+
+            // B) VERIFICAÇÃO ONLINE (SE NÃO ENCONTRAR OFFLINE)
+            try {
+                const onlineResult = await fetchFromWikipedia(query);
+                return { text: onlineResult, source: "online" };
+            } catch (error) {
+                return { 
+                    text: "Desculpa, não encontrei essa resposta na minha base local e estou sem conexão ou a pesquisa online falhou.", 
+                    source: "offline" 
+                };
+            }
+        }
+
+        // --- 3. PESQUISA ONLINE (API WIKIPEDIA) ---
+        async function fetchFromWikipedia(query) {
+            try {
+                // Pesquisar o termo mais próximo na Wikipedia em Português
+                const searchUrl = `https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`;
+                const searchResponse = await fetch(searchUrl);
+                const searchData = await searchResponse.json();
+
+                if (searchData.query.search.length === 0) {
+                    return "Não encontrei informações sobre isso na web.";
+                }
+
+                // Obter o resumo da página correspondente
+                const pageTitle = searchData.query.search[0].title;
+                const summaryUrl = `https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`;
+                const summaryResponse = await fetch(summaryUrl);
+                const summaryData = await summaryResponse.json();
+
+                if (summaryData.extract) {
+                    return summaryData.extract;
+                } else {
+                    return "Encontrei o assunto, mas não consegui extrair um resumo claro.";
+                }
+            } catch (error) {
+                throw new Error("Erro na conexão online.");
+            }
+        }
+    </script>
+</body>
+</html>
